@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:  # <--- THIS IS THE MISSING KEY YOU NEED
+  # Database Container
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ai_postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=kumar@2004
+      - POSTGRES_DB=ai_doc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Container
+  backend:
+    build: .
+    container_name: docai_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ai_doc_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=kumar@2004
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  postgres_data:.
